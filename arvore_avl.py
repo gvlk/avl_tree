@@ -3,69 +3,108 @@
 
 class Tree:
 
-	def __init__(self, info: int):
-		self.ls: Tree
-		self.rs: Tree
-		self.h: int
+	def __init__(self, info: int = None):
+		if info is not None:
+			self.ls: Tree
+			self.rs: Tree
+			self.h: int
 
-		self.info = info
-		self.ls = None
-		self.rs = None
-		self.h = 0
+			self.info = info
+			self.ls = None
+			self.rs = None
+			self.h = 0
+		else:
+			self.root: Tree
+
+			self.root = None
 
 	def __str__(self):
-		return f'Info: {self.info}, Height: {self.h}'
+		if hasattr(self, 'root'):
+			if self.root is not None:
+				return f'Root: {self.root.info}'
+			else:
+				return 'Root: None'
+		else:
+			if self.ls is None:
+				li = 'None'
+			else:
+				li = str(self.ls.info)
+			if self.rs is None:
+				ri = 'None'
+			else:
+				ri = str(self.rs.info)
+			return f'Info: {self.info}, Height: {self.h}, [{li:0>4} | {ri:0>4}]'
 
 	def insert(self, info: int):
 		newNode: Tree
 		newRoot: Tree
 
-		if info < self.info:
-			if self.ls is None:  # Caso base
-				self.ls = Tree(info)
-				self.h = self.getHeight()
-				return self.ls
-			else:  # Caso recursivo
-				newNode = self.ls.insert(info)  # A função retorna uma tupla caso haja rotação
+		if hasattr(self, 'root'):  # Raiz
+			if self.root is not None:
+				newNode = self.root.insert(info)
 				if isinstance(newNode, tuple):
-					self.ls = newNode[1]  # newNode[1] é a nova raiz da sub-árvore
-					self.ls.ls.h = self.ls.ls.getHeight()
-					self.ls.h = self.ls.getHeight()
+					self.root = newNode[1]
 					newNode = newNode[0]
-				if newNode:
-					newRoot = self.balance()
-					if newRoot:
-						self.h = self.getHeight()
-						return newNode, newRoot
-					self.h = self.getHeight()
-					return newNode
-				else:
-					return False
-
-		elif info > self.info:
-			if self.rs is None:
-				self.rs = Tree(info)
-				self.h = self.getHeight()
-				return self.rs
+				return newNode
 			else:
-				newNode = self.rs.insert(info)
-				if isinstance(newNode, tuple):
-					self.rs = newNode[1]
-					self.rs.rs.h = self.rs.rs.getHeight()
-					self.rs.h = self.rs.getHeight()
-					newNode = newNode[0]
-				if newNode:
-					newRoot = self.balance()
-					if newRoot:
-						self.h = self.getHeight()
-						return newNode, newRoot
-					self.h = self.getHeight()
-					return newNode
-				else:
-					return False
+				setattr(self, 'root', Tree(info))
+				return self.root
 
 		else:
-			return False  # Info já existe na árvore
+			if info < self.info:
+				if self.ls is None:  # Caso base
+					self.ls = Tree(info)
+					self.h = self.getHeight()
+					return self.ls
+				else:  # Caso recursivo
+					newNode = self.ls.insert(info)  # A função retorna uma tupla caso haja rotação
+					if isinstance(newNode, tuple):
+						self.ls = newNode[1]  # newNode[1] é a nova raiz da sub-árvore
+						self.ls.ls.h = self.ls.ls.getHeight()
+						self.ls.h = self.ls.getHeight()
+						newNode = newNode[0]
+					if newNode:
+						newRoot = self.balance()
+						if newRoot:
+							if newRoot.ls is not None:
+								newRoot.ls.h = newRoot.ls.getHeight()
+							if newRoot.rs is not None:
+								newRoot.rs.h = newRoot.rs.getHeight()
+							newRoot.h = newRoot.getHeight()
+							return newNode, newRoot
+						self.h = self.getHeight()
+						return newNode
+					else:
+						return False
+
+			elif info > self.info:
+				if self.rs is None:
+					self.rs = Tree(info)
+					self.h = self.getHeight()
+					return self.rs
+				else:
+					newNode = self.rs.insert(info)
+					if isinstance(newNode, tuple):
+						self.rs = newNode[1]
+						self.rs.rs.h = self.rs.rs.getHeight()
+						self.rs.h = self.rs.getHeight()
+						newNode = newNode[0]
+					if newNode:
+						newRoot = self.balance()
+						if newRoot:
+							if newRoot.ls is not None:
+								newRoot.ls.h = newRoot.ls.getHeight()
+							if newRoot.rs is not None:
+								newRoot.rs.h = newRoot.rs.getHeight()
+							newRoot.h = newRoot.getHeight()
+							return newNode, newRoot
+						self.h = self.getHeight()
+						return newNode
+					else:
+						return False
+
+			else:
+				return False  # Info já existe na árvore
 
 	def remove(self, info: int):
 		target = self.search(info)
@@ -139,7 +178,6 @@ class Tree:
 				rrh = self.rs.rs.h
 
 			if rrh >= rlh:
-				self.h -= 2
 				return self.leftRotate()
 			else:
 				return self.rightLeftRotate()
@@ -185,8 +223,3 @@ class Tree:
 			rh = self.rs.h
 		return 1 + max(lh, rh)
 
-
-teste = Tree(1329)
-nodo9427 = teste.insert(9427)
-nodo3824 = teste.insert(3824)
-print()
