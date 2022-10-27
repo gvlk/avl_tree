@@ -2,27 +2,28 @@ from arvore_avl import Tree
 from random import randint
 
 
-arv = Tree()
-numeros_usados = set()
+arv = Tree(1)
 nodos = list()
+nodos.append(arv)
+c = int()
 
-while True:
-	x = randint(1, 9999)
-	numeros_usados.add(x)
-	nodo = arv.insert(x)
-	nodos.append(nodo)
-	if nodo:
-		if arv.root.h == 5:
-			break
+# while c < 6:
+# 	x = randint(10, 99)
+# 	nodo = arv.insert(x)
+# 	if nodo:
+# 		nodos.append(nodo)
+# 		c += 1
+#
+# for n in nodos:
+# 	print(n)
+#
+# print()
+
+nodos.append(arv.insert(3))
+nodos.append(arv.insert(4))
+nodos.append(arv.insert(9))
 
 
-print(arv)
-for n in nodos:
-	print(n)
-
-print()
-
-print(arv)
 nodos.sort(reverse=True, key=lambda tree: tree.h)
 for n in nodos:
 	print(n)
