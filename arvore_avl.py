@@ -3,9 +3,50 @@
 
 class Tree:
 
+	def __init__(self):
+		self.root: Node
+
+		self.root = None
+
+	def insert(self, info: int):
+		newNode: Node
+		newRoot: Node
+		rootSwap: bool
+
+		if self.root:
+			setattr(self.root, 'is_root', True)
+			newNode, newRoot = self.root.insert(info)
+			rootSwap = not getattr(self.root, 'is_root')
+			delattr(self.root, 'is_root')
+			if rootSwap:
+				self.root = newRoot
+			return newNode
+
+		else:
+			self.root = Node(info)
+			return self.root
+
+	def remove(self, info: int):
+		newRoot: Node
+		rootSwap: bool
+
+		setattr(self.root, 'is_root', True)
+		newRoot = self.root.remove(info)
+		rootSwap = not getattr(self.root, 'is_root')
+		delattr(self.root, 'is_root')
+		if rootSwap:
+			self.root = newRoot
+		return newRoot
+
+	def search(self, info: int):
+		return self.root.search(info)
+
+
+class Node:
+
 	def __init__(self, info: int):
-		self.ls: Tree
-		self.rs: Tree
+		self.ls: Node
+		self.rs: Node
 		self.h: int
 
 		self.info = info
@@ -25,16 +66,16 @@ class Tree:
 		return f'Info: {self.info}, Height: {self.h}, [{li} | {ri}]'
 
 	def insert(self, info: int):
-		newNode: Tree
-		newRoot: Tree
+		newNode: Node
+		newRoot: Node
 
 		if info < self.info:
 			if self.ls is None:  # Caso base
-				self.ls = Tree(info)
+				self.ls = Node(info)
 				self.h = self.getHeight()
-				return self.ls
+				return self.ls, False
 			else:  # Caso recursivo
-				newNode = self.ls.insert(info)  # A função retorna uma tupla caso haja rotação
+				newNode = self.ls.insert(info)[0]
 				if newNode:
 					newRoot = self.balance()
 					if newRoot:  # Se houve modificação e há uma nova raiz para essa subárvore
@@ -43,19 +84,18 @@ class Tree:
 						if newRoot.rs:
 							newRoot.rs.h = newRoot.rs.getHeight()
 						newRoot.h = newRoot.getHeight()
-						return newNode
 					self.h = self.getHeight()
-					return newNode
+					return newNode, newRoot
 				else:
-					return False
+					return False, False
 
 		elif info > self.info:
 			if self.rs is None:
-				self.rs = Tree(info)
+				self.rs = Node(info)
 				self.h = self.getHeight()
-				return self.rs
+				return self.rs, False
 			else:
-				newNode = self.rs.insert(info)
+				newNode = self.rs.insert(info)[0]
 				if newNode:
 					newRoot = self.balance()
 					if newRoot:
@@ -64,22 +104,26 @@ class Tree:
 						if newRoot.rs:
 							newRoot.rs.h = newRoot.rs.getHeight()
 						newRoot.h = newRoot.getHeight()
-						return newNode
 					self.h = self.getHeight()
-					return newNode
+					return newNode, newRoot
 				else:
-					return False
+					return False, False
 
 		else:
-			return False  # Info já existe na árvore
+			return False, False  # Info já existe na árvore
 
 	def remove(self, info: int):
-		# Na remoção o nodo não é apagado, apenas a informação dele é trocada pela informação de outro nodo
-		target = self.search(info)
-		if target is not None:
-			pass
-		else:
+		target: Node
+		parent: Node
+		side: str
+
+		parent, side = self.getParent(info)
+		if not parent:
 			return None
+		target = getattr(parent, side)
+		if target.h == 0:  # Nodo a ser apagado é folha
+			setattr(parent, side, None)
+		return self.balance()
 
 	def search(self, info: int):
 		if info == self.info:
@@ -96,9 +140,27 @@ class Tree:
 				else:
 					return None
 
+	def getParent(self, info: int):
+		if self.ls.info == info:
+			return self, 'ls'
+		elif self.rs.info == info:
+			return self, 'rs'
+		else:
+			if info < self.info:
+				if self.ls is not None:
+					return self.ls.getParent(info)
+				else:
+					return None
+			else:
+				if self.rs is not None:
+					return self.rs.getParent(info)
+				else:
+					return None
+
 	def getBalance(self) -> int:
 		lh: int
 		rh: int
+
 		if self.ls is None:
 			lh = -1
 		else:
@@ -130,6 +192,9 @@ class Tree:
 			else:
 				lrh = self.ls.rs.h
 
+			if hasattr(self, 'is_root'):  # Caso a raiz da árvore seja movida
+				setattr(self, 'is_root', False)
+
 			if llh >= lrh:
 				return self.rightRotate()
 			else:
@@ -145,6 +210,9 @@ class Tree:
 			else:
 				rrh = self.rs.rs.h
 
+			if hasattr(self, 'is_root'):
+				setattr(self, 'is_root', False)
+
 			if rrh >= rlh:
 				return self.leftRotate()
 			else:
@@ -154,24 +222,16 @@ class Tree:
 			return False  # Árvore já está balanceada
 
 	def leftRotate(self):
-		oldRoot: Tree  # Nodo que guarda o antigo valor da raiz
-		rootInfo: int
+		newRoot: Node
+		info: int
 
-		oldRoot = self.rs
-		rootInfo = self.rs.info
-		oldRoot.info = self.info
-		self.info = rootInfo
-		self.ls = oldRoot
-		self.rs = oldRoot.rs
-		oldRoot.rs = oldRoot.ls
-
-		# newRoot = self.rs
-		# self.rs = newRoot.ls
-		# newRoot.ls = self
-		return self
+		newRoot = self.rs
+		self.rs = newRoot.ls
+		newRoot.ls = self
+		return newRoot
 
 	def rightRotate(self):
-		newRoot: Tree
+		newRoot: Node
 		info: int
 
 		newRoot = self.ls
@@ -180,11 +240,11 @@ class Tree:
 		return newRoot
 
 	def leftRightRotate(self):
-		self.ls = Tree.leftRotate(self.ls)
+		self.ls = Node.leftRotate(self.ls)
 		return self.rightRotate()
 
 	def rightLeftRotate(self):
-		self.rs = Tree.rightRotate(self.rs)
+		self.rs = Node.rightRotate(self.rs)
 		return self.leftRotate()
 
 	def getHeight(self) -> int:
